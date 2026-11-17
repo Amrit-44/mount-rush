@@ -36,6 +36,7 @@ canvas { display: block; touch-action: none; }
 .btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.015); filter: brightness(1.12); }
 .btn:active:not(:disabled) { transform: translateY(1px) scale(0.985); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible, button:focus-visible { outline: 2px solid #7cc8ff; outline-offset: 2px; }
 .btn-primary { background: linear-gradient(180deg, #5cc0ff, #2b86ee); color: #04122c; box-shadow: 0 6px 22px rgba(60, 160, 255, 0.45), inset 0 1px 0 rgba(255,255,255,.5); }
 .btn-hot { background: linear-gradient(180deg, #ffb347, #ff6a1f); color: #2b0e00; box-shadow: 0 6px 22px rgba(255, 120, 40, 0.45), inset 0 1px 0 rgba(255,255,255,.45); }
 .btn-ghost { background: rgba(20, 50, 110, 0.55); color: #e8f4ff; border: 1px solid rgba(160, 210, 255, 0.3); }

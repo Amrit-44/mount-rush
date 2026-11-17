@@ -18,6 +18,9 @@ export interface SaveData {
   endlessBest: { distance: number; score: number };
 }
 
+// NOTE: keep the original storage key — renaming it would wipe every existing
+// player's career, coins and unlocks. Display branding is "Mount Rush";
+// only this key stays as-is.
 const KEY = 'powder-rush-save-v1';
 
 export const defaultSettings = (): Settings => ({

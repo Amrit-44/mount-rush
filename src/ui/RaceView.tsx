@@ -31,7 +31,7 @@ function TouchPad({ slot, compact, tint }: { slot: number; compact: boolean; tin
         <TB label="▶" size={big} style={st} onDown={() => (t.right = true)} onUp={() => (t.right = false)} />
       </div>
       <div className="flex gap-2 items-end">
-        {!compact && <TB label="BRAKE" size={mid} style={{ fontSize: 13 }} onDown={() => (t.brake = true)} onUp={() => (t.brake = false)} />}
+        <TB label="BRAKE" size={mid} style={{ fontSize: compact ? 10 : 13 }} onDown={() => (t.brake = true)} onUp={() => (t.brake = false)} />
         <TB label="BOOST" size={mid} style={{ fontSize: compact ? 11 : 13, ...st }} className="!bg-orange-500/40" onDown={() => (t.boost = true)} onUp={() => (t.boost = false)} />
         <TB label="JUMP" size={big + 8} style={{ fontSize: compact ? 13 : 17, ...st }} className="!bg-sky-500/40" onDown={() => input.pressJump(slot)} onUp={() => undefined} />
       </div>
@@ -171,7 +171,7 @@ function Hud({ hud, settings, versus, horizontal, touch }: { hud: HudState; sett
       )}
       {hud.phase === 'countdown' && (
         <div className="absolute top-[30%] inset-x-0 text-center text-sm text-sky-100/90 hidden sm:block" style={{ textShadow: '0 2px 8px #000' }}>
-          {versus ? 'P1: A/D · W jump · Shift boost    |    P2: ←/→ · ↑ jump · R-Shift boost' : 'A/D or ←/→ steer · SPACE jump · SHIFT boost · S brake · ESC pause'}
+          {touch ? (versus ? 'P1 left pad · P2 right pad — steer, JUMP, BOOST, BRAKE' : '◀ ▶ steer · JUMP logs · BOOST on pads · spin in the air for tricks') : (versus ? 'P1: A/D · W jump · Shift boost    |    P2: ←/→ · ↑ jump · R-Shift boost' : 'A/D or ←/→ steer · SPACE jump · SHIFT boost · S brake · ESC pause')}
           <div className="text-xs mt-1 text-sky-200/70">Hit boost pads · jump logs · spin in the air for trick boosts</div>
         </div>
       )}
@@ -188,11 +188,10 @@ function Results({ res, sum, setup, next, onContinue, onRetry, onMenu, onNext }:
   const p0 = res.players[0];
   const ev = setup.mode === 'career' ? EVENTS.find((e) => e.id === setup.eventId) : undefined;
   const lv = levelFromXp(save.xp);
-  let headline = '', sub = '', good = true;
+  let headline = '', sub = '';
   if (res.mode === 'endless') { headline = sum?.bestDistance ? 'NEW RECORD!' : 'RUN OVER'; sub = `${Math.round(res.endless?.distance ?? 0)} m`; }
   else if (res.mode === 'versus') { headline = `PLAYER ${(res.winnerSlot ?? 0) + 1} WINS!`; sub = 'Great race!'; }
-  else { good = p0.position <= 3; headline = p0.position === 1 ? 'VICTORY!' : p0.position <= 3 ? 'PODIUM!' : 'FINISHED'; sub = p0.finished ? `${p0.position}${ord(p0.position).toLowerCase()} place · ${fmtTime(p0.time)}` : 'Did not finish'; }
-  void good;
+  else { headline = p0.position === 1 ? 'VICTORY!' : p0.position <= 3 ? 'PODIUM!' : 'FINISHED'; sub = p0.finished ? `${p0.position}${ord(p0.position).toLowerCase()} place · ${fmtTime(p0.time)}` : 'Did not finish'; }
   return (
     <div className="absolute inset-0 z-20 bg-navy/70 backdrop-blur-sm overflow-y-auto flex items-start sm:items-center justify-center p-3">
       <Panel className="w-full max-w-3xl p-5 sm:p-7 pop my-auto">

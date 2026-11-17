@@ -140,7 +140,7 @@ export function applyResult(s: SaveData, r: RaceResult, eventLookup?: CareerEven
         sum.newMedal = true;
         s.medals[eventLookup.id] = m;
         const first = old === 0;
-        const mult = [0, 1, 1.5, 2][m] - [0, 0, 1, 1.5][m] * (first ? 0 : 0) ;
+        const mult = [0, 1, 1.5, 2][m];
         const gained = first ? eventLookup.reward * mult : eventLookup.reward * ([0, 1, 1.5, 2][m] - [0, 1, 1.5, 2][old]) * 0.8;
         sum.coinsBonus += Math.round(gained);
         sum.xp += Math.round(eventLookup.xp * ([0, 1, 1.5, 2][m] - (first ? 0 : [0, 1, 1.5, 2][old]) * 0.6));

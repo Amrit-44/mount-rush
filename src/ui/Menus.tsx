@@ -78,7 +78,7 @@ export function MainMenu({ go, onQuick }: { go: (s: string) => void; onQuick: ()
       </div>
       <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 pb-8 max-w-xl">
         <div className="mb-6">
-          <div className="font-display font-black italic uppercase text-6xl sm:text-8xl leading-[0.85] logo-text">Powder<br />Rush</div>
+          <div className="font-display font-black italic uppercase text-6xl sm:text-8xl leading-[0.85] logo-text">Mount<br />Rush</div>
           <div className="font-display font-extrabold tracking-[0.35em] text-sky-200 text-sm sm:text-base mt-2">DOWNHILL SKI RACING</div>
         </div>
         <div className="flex flex-col gap-2.5">

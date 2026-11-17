@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATS, Cat, Item, ITEMS, Look, itemById, itemsOf } from '../game/data';
 import { PreviewScene, Focus } from '../game/preview';
 import { itemUnlockMet, syncUnlocks, unlockText } from '../game/progression';
@@ -44,6 +44,7 @@ export function Garage({ preview, onBack }: { preview: PreviewScene | null; onBa
   const [cat, setCat] = useState<Cat>('ski');
   const [sel, setSel] = useState<string>(save.equipped.ski);
   const [confirm, setConfirm] = useState<Item | null>(null);
+  const lastX = useRef<number | null>(null);
   const items = useMemo(() => itemsOf(cat), [cat]);
   const item = itemById(sel) ?? items[0];
   const owned = (id: string) => save.owned.includes(id);
@@ -81,9 +82,9 @@ export function Garage({ preview, onBack }: { preview: PreviewScene | null; onBa
       <Header title="Garage" onBack={onBack} sub="Drag the skier to rotate" right={<div className="glass rounded-xl px-4 py-2"><Coin n={save.coins} className="text-amber-200 text-xl" /></div>} />
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 px-3 sm:px-6 pb-4">
         <div className="flex-1 min-h-[22vh] touch-none cursor-grab active:cursor-grabbing"
-          onPointerDown={(e) => { if (preview) preview.dragging = true; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
-          onPointerMove={(e) => { if (preview?.dragging) preview.drag(e.movementX); }}
-          onPointerUp={() => { if (preview) preview.dragging = false; }} onPointerCancel={() => { if (preview) preview.dragging = false; }} />
+          onPointerDown={(e) => { if (preview) preview.dragging = true; lastX.current = e.clientX; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
+          onPointerMove={(e) => { if (preview?.dragging && lastX.current !== null) { preview.drag(e.clientX - lastX.current); lastX.current = e.clientX; } }}
+          onPointerUp={() => { if (preview) preview.dragging = false; lastX.current = null; }} onPointerCancel={() => { if (preview) preview.dragging = false; lastX.current = null; }} />
         <Panel className="lg:w-[470px] shrink-0 min-h-0 flex flex-col max-h-[62vh] lg:max-h-none">
           <div className="flex gap-1.5 p-3 overflow-x-auto shrink-0 border-b border-sky-300/15">
             {CATS.map((c) => (

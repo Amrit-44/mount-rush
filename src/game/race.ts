@@ -221,10 +221,8 @@ export class Race {
     // countdown
     if (this.phase === 'countdown') {
       this.countT += dt;
-      const n = Math.ceil(-this.countT + 0.0001 - 0.2);
       const shown = clamp(Math.ceil(-this.countT), 0, 3);
       if (this.countT < 0 && shown !== this.lastCount) { this.lastCount = shown; if (shown > 0) audio.play('beep'); }
-      void n;
       if (this.countT >= 0) {
         this.phase = 'racing'; this.goT = 0; audio.play('go');
         for (const r of this.racers) r.sim.begin();
