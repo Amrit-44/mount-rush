@@ -4,7 +4,7 @@ import { DEFAULT_LOOK, Look, itemById } from './data';
 import { clamp, damp } from './util';
 
 export type PoseMode = 'idle' | 'ski' | 'tuck' | 'air' | 'crash' | 'celebrate' | 'lose';
-export interface Pose { mode: PoseMode; lean: number; speed01: number; crashP: number; t: number; squash: number; spin: number }
+export interface Pose { mode: PoseMode; lean: number; speed01: number; crashP: number; t: number; squash: number; spin: number; boosted?: boolean; airTime?: number }
 
 const lam = (c: number) => new THREE.MeshLambertMaterial({ color: c });
 const cyl = (r0: number, r1: number, h: number, seg = 8) => new THREE.CylinderGeometry(r0, r1, h, seg);
@@ -25,6 +25,18 @@ function skiTexture(color: number, kind: string): THREE.CanvasTexture {
     case 'stars': for (let i = 0; i < 24; i++) { g.beginPath(); g.arc((i * 37) % 64, (i * 53) % 256, 2 + (i % 3), 0, 6.3); g.fill(); } break;
     case 'camo': for (let i = 0; i < 18; i++) { g.fillStyle = i % 2 ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.4)'; g.beginPath(); g.ellipse((i * 41) % 64, (i * 67) % 256, 14, 22, i, 0, 6.3); g.fill(); } break;
   }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function jacketTexture(jacket: number, accent: number): THREE.CanvasTexture {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#' + new THREE.Color(jacket).getHexString(); g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#' + new THREE.Color(accent).getHexString();
+  g.fillRect(60, 0, 8, 128); // centre zip
+  g.fillStyle = 'rgba(255,255,255,0.14)'; g.fillRect(0, 0, 128, 16); // shoulder highlight
+  g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(0, 112, 128, 16); // hem shade
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
@@ -101,17 +113,20 @@ export class SkierModel {
     this.rig.add(this.hips);
     for (const sx of [-0.17, 0.17]) {
       const thigh = new THREE.Group(); thigh.position.set(sx * 0.75, 0, 0); this.hips.add(thigh);
-      this.mesh(cyl(0.085, 0.07, 0.45), pants, thigh, 0, -0.225, 0);
-      const knee = new THREE.Group(); knee.position.y = -0.45; thigh.add(knee);
-      this.mesh(cyl(0.07, 0.06, 0.45), pants, knee, 0, -0.225, 0);
-      const boot = this.mesh(new THREE.BoxGeometry(0.13, 0.17, 0.34), bootM, knee, 0, -0.5, -0.05);
+      this.mesh(cyl(0.085, 0.07, 0.48), pants, thigh, 0, -0.24, 0);
+      const knee = new THREE.Group(); knee.position.y = -0.48; thigh.add(knee);
+      this.mesh(cyl(0.07, 0.06, 0.48), pants, knee, 0, -0.24, 0);
+      const boot = this.mesh(new THREE.BoxGeometry(0.15, 0.19, 0.38), bootM, knee, 0, -0.53, -0.06);
       this.legs.push({ thigh, knee, boot });
     }
-    // torso
+    // torso (tapered, textured jacket)
     this.hips.add(this.torso);
     this.mesh(new THREE.BoxGeometry(0.36, 0.2, 0.22), pants, this.hips, 0, 0.04, 0);
-    this.mesh(new THREE.BoxGeometry(0.4, 0.5, 0.24), jacket, this.torso, 0, 0.3, 0);
-    this.mesh(new THREE.BoxGeometry(0.41, 0.08, 0.25), accent, this.torso, 0, 0.12, 0);
+    const jacketTex = jacketTexture(of.jacket, of.accent); this.disposables.push(jacketTex);
+    const jacketM = new THREE.MeshLambertMaterial({ map: jacketTex }); this.disposables.push(jacketM);
+    const torsoM = this.mesh(cyl(0.21, 0.17, 0.5, 10), jacketM, this.torso, 0, 0.3, 0);
+    torsoM.scale.set(1, 1, 0.62);
+    this.mesh(new THREE.BoxGeometry(0.36, 0.08, 0.23), accent, this.torso, 0, 0.12, 0);
     this.mesh(new THREE.BoxGeometry(0.16, 0.34, 0.01), accent, this.torso, 0, 0.35, -0.125);
     // head
     this.head.position.set(0, 0.7, 0); this.torso.add(this.head);
@@ -137,13 +152,14 @@ export class SkierModel {
   }
 
   private buildHelmet(hm: any, gg: any) {
-    const hmM = this.mat(hm.color);
+    const hmM = new THREE.MeshStandardMaterial({ color: hm.color, roughness: 0.35, metalness: 0.05 }); this.disposables.push(hmM);
     const dome = this.mesh(new THREE.SphereGeometry(0.175, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), hmM, this.head, 0, 0.07, 0.0);
     dome.scale.set(1, 1, 1.05);
     const lens = this.mat(gg.lens); (lens as THREE.MeshLambertMaterial).emissive = new THREE.Color(gg.lens).multiplyScalar(0.25);
     const frame = this.mat(gg.frame);
     this.mesh(new THREE.BoxGeometry(0.3, 0.1, 0.07), frame, this.head, 0, 0.07, -0.145);
-    this.mesh(new THREE.BoxGeometry(0.25, 0.07, 0.075), lens, this.head, 0, 0.07, -0.15);
+    this.mesh(new THREE.BoxGeometry(0.28, 0.09, 0.08), lens, this.head, 0, 0.07, -0.15);
+    this.mesh(new THREE.BoxGeometry(0.3, 0.025, 0.14), hmM, this.head, 0, 0.16, -0.17); // visor peak
     this.mesh(new THREE.TorusGeometry(0.163, 0.018, 5, 14), frame, this.head, 0, 0.075, 0).rotation.x = Math.PI / 2;
     switch (hm.style) {
       case 'racer': this.mesh(new THREE.BoxGeometry(0.06, 0.04, 0.34), this.mat(0xe83030), this.head, 0, 0.245, 0); break;
@@ -193,8 +209,8 @@ export class SkierModel {
     switch (p.mode) {
       case 'idle': crouch = 0.14 + Math.sin(p.t * 1.6) * 0.02; pitch = 0.12; armUp = -0.25; armOut = 0.28; elbow = 0.6; break;
       case 'ski': crouch = 0.34 + 0.22 * sp + p.squash * 0.35 + wob; pitch = 0.3 + 0.4 * sp; armUp = -0.55 - 0.3 * sp; armOut = 0.28; elbow = 1.0 + 0.4 * sp; roll = p.lean; break;
-      case 'tuck': crouch = 0.85 + p.squash * 0.1; pitch = 1.05; armUp = 0.65; armOut = 0.12; elbow = 1.7; roll = p.lean * 0.8; break;
-      case 'air': crouch = 0.88; pitch = 0.38; armUp = -0.35; armOut = 1.15 + Math.sin(p.t * 12) * 0.06; elbow = 0.3; roll = p.lean * 0.5; break;
+      case 'tuck': crouch = 0.92 + p.squash * 0.1; pitch = 1.05; armUp = 0.65; armOut = 0.12; elbow = 1.7; roll = p.lean * 0.8; break;
+      case 'air': { const takeoff = p.airTime !== undefined ? Math.max(0, 1 - p.airTime / 0.15) : 0; crouch = (p.boosted ? 0.95 : 0.88) - takeoff * 0.3; pitch = 0.38; armUp = -0.35; armOut = (p.boosted ? 1.35 : 1.15) + Math.sin(p.t * 12) * 0.06; elbow = p.boosted ? 0.15 : 0.3; roll = p.lean * 0.5; break; }
       case 'crash': crouch = 0.6 + Math.sin(p.t * 17) * 0.3; pitch = 0.6; armUp = Math.sin(p.t * 15) * 1.4; armOut = 1.0 + Math.sin(p.t * 19) * 0.5; elbow = 0.8 + Math.sin(p.t * 13) * 0.5; break;
       case 'celebrate': crouch = 0.22 + Math.abs(Math.sin(p.t * 6)) * 0.12; pitch = 0.0; armUp = -2.9; armOut = 0.45 + Math.sin(p.t * 8) * 0.15; elbow = 0.25; break;
       case 'lose': crouch = 0.5; pitch = 0.6; armUp = 0.2; armOut = 0.1; elbow = 0.5; break;
@@ -205,7 +221,7 @@ export class SkierModel {
     s.elbow = damp(s.elbow, elbow, k, dt); s.roll = damp(s.roll, roll, 10, dt);
 
     // legs: symmetric 2-bone with vertical reach H
-    const H = 0.9 - s.crouch * 0.34, a = Math.acos(clamp(H / 0.9, -1, 1));
+    const H = 0.96 - s.crouch * 0.34, a = Math.acos(clamp(H / 0.96, -1, 1));
     this.hips.position.y = 0.2 + H;
     for (const l of this.legs) { l.thigh.rotation.x = a; l.knee.rotation.x = -2 * a; l.boot.rotation.x = a; }
     this.torso.rotation.x = -s.pitch;
@@ -215,7 +231,7 @@ export class SkierModel {
       ar.sh.rotation.x = s.armUp; ar.sh.rotation.z = sg[i] * s.armOut;
       ar.el.rotation.x = -s.elbow * (p.mode === 'celebrate' ? 0.3 : 0.8);
     });
-    const poleBack = p.mode === 'celebrate' ? -0.2 : p.mode === 'tuck' ? -0.2 : -0.7 - 0.2 * sp;
+    const poleBack = p.mode === 'celebrate' ? -0.2 : p.mode === 'tuck' ? -1.0 : -0.7 - 0.2 * sp;
     for (const pl of this.poles) pl.rotation.x = damp(pl.rotation.x, poleBack, 8, dt);
 
     // whole-body orientation

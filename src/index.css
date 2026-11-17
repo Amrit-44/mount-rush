@@ -78,6 +78,27 @@ canvas { display: block; touch-action: none; }
   -webkit-mask-image: radial-gradient(circle at 50% 52%, transparent 38%, #000 82%);
   mask-image: radial-gradient(circle at 50% 52%, transparent 38%, #000 82%);
 }
+.speed-fx-streaks {
+  position: absolute; inset: -25%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0) 0deg 7deg, rgba(255,255,255,0.35) 7.4deg 7.9deg, rgba(255,255,255,0) 8.3deg 14deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 88%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 88%);
+  animation: fxSpin 1.2s linear infinite;
+}
+@keyframes fxSpin { to { transform: rotate(360deg); } }
+.menu-aurora {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 20% 12%, rgba(124, 200, 255, 0.22), transparent 70%),
+    radial-gradient(50% 40% at 85% 25%, rgba(150, 120, 255, 0.16), transparent 70%),
+    radial-gradient(70% 50% at 50% 100%, rgba(60, 220, 180, 0.12), transparent 70%);
+  animation: auroraShift 14s ease-in-out infinite alternate;
+}
+@keyframes auroraShift { from { opacity: 0.75; transform: translateY(-1%) scale(1.02); } to { opacity: 1; transform: translateY(1%) scale(1.06); } }
+.boost-ready { animation: boostPulse 1.1s ease-in-out infinite; }
+@keyframes boostPulse { 0%, 100% { box-shadow: 0 0 8px rgba(255, 170, 60, 0.45); } 50% { box-shadow: 0 0 18px rgba(255, 170, 60, 0.85); } }
+.boost-ring { animation: ringPulse 0.9s ease-in-out infinite; }
+@keyframes ringPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
 input[type="range"] { accent-color: #5cc0ff; width: 100%; height: 28px; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }

@@ -90,6 +90,9 @@ export class Snowfall {
     });
     this.points = new THREE.Points(this.geo, this.mat); this.points.frustumCulled = false; this.points.renderOrder = 5;
   }
+  setWind(wind: number) {
+    this.mat.uniforms.uWind.value.set(wind, wind * 0.4);
+  }
   setCamera(cam: THREE.PerspectiveCamera, time: number, viewH: number) {
     this.mat.uniforms.uCam.value.copy(cam.position); this.mat.uniforms.uTime.value = time;
     this.mat.uniforms.uPx.value = viewH / (2 * Math.tan((cam.fov * Math.PI) / 360));
@@ -142,6 +145,7 @@ export class Trail {
   pts: { x: number; y: number; z: number; rx: number; rz: number; gap: boolean }[] = [];
   max = 60; pendingGap = true; lastX = 1e9; lastZ = 1e9;
   pa: Float32Array; ca: Float32Array; ia: Uint16Array;
+  private boostOn = false; widthK = 1;
   constructor(public tint: number) {
     const nv = this.max * 4;
     this.pa = new Float32Array(nv * 3); this.ca = new Float32Array(nv * 3); this.ia = new Uint16Array(this.max * 12);
@@ -154,6 +158,14 @@ export class Trail {
     this.mesh = new THREE.Mesh(this.geo, this.mat); this.mesh.frustumCulled = false; this.mesh.renderOrder = 1;
   }
   reset() { this.pts.length = 0; this.pendingGap = true; this.geo.setDrawRange(0, 0); }
+  /** Warm orange + wider ribbon while boosting; no-op when unchanged. */
+  setBoost(on: boolean) {
+    if (on === this.boostOn) return;
+    this.boostOn = on;
+    this.tint = on ? 0xff8c2e : 0x9db6d4;
+    this.widthK = on ? 1.5 : 1;
+    this.rebuild();
+  }
   add(x: number, y: number, z: number, rx: number, rz: number, grounded: boolean) {
     if (!grounded) { this.pendingGap = true; return; }
     if (Math.hypot(x - this.lastX, z - this.lastZ) < 1.3) return;
@@ -172,7 +184,7 @@ export class Trail {
       let k = 0;
       for (const off of [-0.34, -0.2, 0.2, 0.34]) {
         const v = i * 4 + k++;
-        this.pa[v * 3] = p.x + p.rx * off; this.pa[v * 3 + 1] = p.y + 0.05; this.pa[v * 3 + 2] = p.z + p.rz * off;
+        this.pa[v * 3] = p.x + p.rx * off * this.widthK; this.pa[v * 3 + 1] = p.y + 0.05; this.pa[v * 3 + 2] = p.z + p.rz * off * this.widthK;
         this.ca[v * 3] = r; this.ca[v * 3 + 1] = g; this.ca[v * 3 + 2] = b;
       }
       if (i > 0 && !p.gap) {
