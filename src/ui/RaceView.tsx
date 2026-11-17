@@ -109,6 +109,7 @@ function Hud({ hud, settings, versus, horizontal, touch }: { hud: HudState; sett
   return (
     <div className="absolute inset-0 pointer-events-none select-none">
       {fxOp > 0.02 && !versus && <div className="speed-fx" style={{ opacity: clamp(fxOp, 0, 0.8) }} />}
+      {fxOp > 0.02 && !versus && <div className="speed-fx-streaks" style={{ opacity: clamp(fxOp * 0.8, 0, 0.6), animationDuration: `${clamp(2.2 - p0.speed01 * 1.5, 0.7, 2.2)}s` }} />}
       {hud.players.some((p) => p.crashed) && !versus && <div className="absolute inset-0" style={{ background: 'radial-gradient(circle, transparent 40%, rgba(255,40,40,.35))' }} />}
       {/* timer */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-10">

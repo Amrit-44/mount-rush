@@ -86,7 +86,7 @@ export class World {
   constructor(scene: THREE.Scene, track: Track, q: Quality) {
     this.scene = scene; this.track = track; this.env = track.env; this.q = q;
     this.matV = new THREE.MeshLambertMaterial({ vertexColors: true });
-    this.matTerrain = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x27303c });
+    this.matTerrain = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.matRock = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
     this.matCoin = new THREE.MeshLambertMaterial({ color: 0xffc400, emissive: 0x7a5600 });
     this.matFence = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
@@ -195,11 +195,15 @@ export class World {
         nor[i * 3] = nx; nor[i * 3 + 1] = ny; nor[i * 3 + 2] = nz;
         const hn = hash(s * 0.37, d * 0.53);
         if (isPiste) {
-          tmp.copy(piste).multiplyScalar(1.22 + hn * 0.05 - Math.abs(t) * 0.03);
-          tmp.lerp(edgeBlue, smoothstep(0.8, 1.0, Math.abs(t)) * 0.75);
+          tmp.copy(piste).multiplyScalar(0.97 + hn * 0.05 - Math.abs(t) * 0.03);
+          tmp.lerp(edgeBlue, smoothstep(0.65, 1.0, Math.abs(t)) * 0.75);
+          // groomed corduroy: alternate 0.5 m bands + two ski-groove lines
+          if (Math.floor(Math.abs(d) / 0.5) % 2 === 0) tmp.multiplyScalar(0.96);
+          if (Math.abs(Math.abs(t) - 0.15) < 0.04) tmp.multiplyScalar(0.94);
         } else {
           const rockiness = smoothstep(0.6, 0.88, 1 - ny) * (env.rocky + 0.25);
-          tmp.copy(off).multiplyScalar(0.9 + hn * 0.16);
+          tmp.copy(off).multiplyScalar(0.82 + hn * 0.16);
+          tmp.lerp(edgeBlue, 0.1);
           tmp.lerp(rockC, clamp(rockiness, 0, 1));
           if (o < 3.5) tmp.lerp(bankC, 0.7 * (1 - o / 3.5));
         }
@@ -328,16 +332,16 @@ export class World {
       for (let i = 0; i <= nd; i++) cs.push(z.d0 + ((z.d1 - z.d0) * i) / nd);
       let g: THREE.BufferGeometry, mat: THREE.Material;
       if (z.type === 'ice') {
-        g = this.gridGeo(rows, cs, (s, d) => T.baseH(s, d) + 0.05, (s, d) => new THREE.Color(0x8fd8ff).multiplyScalar(0.92 + hash(s * 0.2, d * 0.2) * 0.14));
+        g = this.gridGeo(rows, cs, (s, d) => T.rampH(s, d) + T.baseH(s, d) + 0.05, (s, d) => new THREE.Color(0x8fd8ff).multiplyScalar(0.92 + hash(s * 0.2, d * 0.2) * 0.14));
         mat = this.matIce;
       } else if (z.type === 'deep') {
         g = this.gridGeo(rows, cs, (s, d) => {
           const f = smoothstep(z.s0, z.s0 + 3, s) * smoothstep(z.s1, z.s1 - 3, s) * smoothstep(z.d0 - 0.01, z.d0 + 1.5, d) * smoothstep(z.d1 + 0.01, z.d1 - 1.5, d);
-          return T.baseH(s, d) + 0.04 + f * (0.22 + 0.14 * Math.sin(s * 1.3) * Math.cos(d * 1.1));
+          return T.rampH(s, d) + T.baseH(s, d) + 0.04 + f * (0.22 + 0.14 * Math.sin(s * 1.3) * Math.cos(d * 1.1));
         }, (s, d) => { const v = 0.93 + 0.07 * Math.sin(s * 1.3) * Math.cos(d * 1.1); return new THREE.Color(v, v, 1); });
         mat = this.matDeep;
       } else {
-        g = this.gridGeo(rows, cs, (s, d) => T.baseH(s, d) + 0.06, () => new THREE.Color(1, 1, 1), true);
+        g = this.gridGeo(rows, cs, (s, d) => T.rampH(s, d) + T.baseH(s, d) + 0.06, () => new THREE.Color(1, 1, 1), true);
         mat = this.matBoost;
       }
       own(g); const m = new THREE.Mesh(g, mat); group.add(m);

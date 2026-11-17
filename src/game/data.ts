@@ -22,7 +22,7 @@ export const ENVS: Record<EnvId, EnvDef> = {
   forest: {
     id: 'forest', name: 'Alpine Forest', desc: 'Dense pines, fallen logs and winding narrow passages.',
     skyTop: 0x4f93e0, skyHorizon: 0xe3f1ff, fog: 0xd3e6f7, fogDensity: 0.0021,
-    sun: 0xfff1d6, sunInt: 2.3, hemiSky: 0xbfdcff, hemiGround: 0x5d7088, hemiInt: 1.05,
+    sun: 0xfff1d6, sunInt: 1.95, hemiSky: 0xbfdcff, hemiGround: 0x5d7088, hemiInt: 0.9,
     sunDir: [0.5, 0.75, 0.35], snow: 0.55, piste: 0xf6faff, off: 0xd0deec, rock: 0x7b8594, mountain: 0x8aa0bd,
     leaf: 0x2f6b4d, baseHw: 9.6, baseSlope: 0.165, wallK: 0.55, wallMax: 30, noiseAmp: 5, treeDensity: 1.0, rocky: 0.35,
     weights: { cruise: 2, curves: 2, forest: 4, logs: 2.5, jumps: 1.2, narrow: 2, rocks: 1, ice: 0.5, deep: 1, bridge: 0.3, split: 0.8, sprint: 0.8 },
@@ -31,7 +31,7 @@ export const ENVS: Record<EnvId, EnvDef> = {
   peak: {
     id: 'peak', name: 'Frozen Peak', desc: 'High altitude, steep drops, huge jumps and icy ridges.',
     skyTop: 0x1f5fc4, skyHorizon: 0xc4e2ff, fog: 0xb9d6f0, fogDensity: 0.0019,
-    sun: 0xf4f8ff, sunInt: 2.6, hemiSky: 0x9ec6f5, hemiGround: 0x4b5a70, hemiInt: 1.0,
+    sun: 0xf4f8ff, sunInt: 2.2, hemiSky: 0x9ec6f5, hemiGround: 0x4b5a70, hemiInt: 0.85,
     sunDir: [-0.45, 0.8, 0.3], snow: 0.8, piste: 0xf2f8ff, off: 0xc2d3e6, rock: 0x6c7684, mountain: 0x7c93b3,
     leaf: 0x3a6a5a, baseHw: 8.2, baseSlope: 0.235, wallK: 1.3, wallMax: 80, noiseAmp: 9, treeDensity: 0.26, rocky: 0.85,
     weights: { cruise: 1, curves: 2, forest: 0.4, logs: 0.4, jumps: 3.2, narrow: 3, rocks: 2, ice: 2.2, deep: 0.5, bridge: 1.6, split: 1, sprint: 2 },
@@ -40,7 +40,7 @@ export const ENVS: Record<EnvId, EnvDef> = {
   valley: {
     id: 'valley', name: 'Extreme Snow Valley', desc: 'Wide sweeping runs, sharp curves, bridges and risky shortcuts.',
     skyTop: 0x5d78d4, skyHorizon: 0xffdcb8, fog: 0xf0dccb, fogDensity: 0.0019,
-    sun: 0xffc98a, sunInt: 2.5, hemiSky: 0xd7d4ff, hemiGround: 0x7a6a7c, hemiInt: 1.05,
+    sun: 0xffc98a, sunInt: 2.1, hemiSky: 0xd7d4ff, hemiGround: 0x7a6a7c, hemiInt: 0.9,
     sunDir: [0.7, 0.45, -0.3], snow: 0.7, piste: 0xfffaf6, off: 0xdccfd6, rock: 0x8a7a80, mountain: 0xa497ba,
     leaf: 0x3c6a58, baseHw: 13, baseSlope: 0.185, wallK: 0.3, wallMax: 26, noiseAmp: 4, treeDensity: 0.42, rocky: 0.5,
     weights: { cruise: 2, curves: 3, forest: 0.7, logs: 0.6, jumps: 3, narrow: 0.6, rocks: 1, ice: 1, deep: 2, bridge: 2, split: 3, sprint: 2 },

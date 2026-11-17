@@ -129,7 +129,7 @@ export class Track {
     if (ad <= hw) return q.y + q.bank * d + q.rough * this.bump(s, d);
     const off = ad - hw, env = this.env;
     let h = q.y + q.bank * sg * hw + q.rough * this.bump(s, sg * hw);
-    h += 0.95 * smoothstep(0, 0.7, off) * (1 - smoothstep(0.7, 3.2, off));
+    h += 1.15 * smoothstep(0, 0.7, off) * (1 - smoothstep(0.7, 2.6, off));
     if (q.canyon > 0.01) h -= q.canyon * smoothstep(0.2, 2.4, off) * (1 - smoothstep(2.4, 24, off));
     const w = Math.max(0, off - 4.5);
     h += Math.min(env.wallMax, env.wallK * Math.pow(w, 1.12));

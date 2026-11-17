@@ -41,7 +41,7 @@ interface Racer {
 
 class CamRig {
   cam = new THREE.PerspectiveCamera(64, 1, 0.3, 3400);
-  s = 0; d = 0; y = 0; ls = 0; ld = 0; ly = 0; fov = 64; shake = 0; roll = 0; init = false; offs = 0;
+  s = 0; d = 0; y = 0; ls = 0; ld = 0; ly = 0; fov = 64; shake = 0; roll = 0; init = false; offs = 0; fovPunch = 0;
   update(r: Racer, T: Track, dt: number, sens: number, time: number) {
     const sim = r.sim, v = sim.v;
     const front = r.finishClock !== null && r.finishClock > 1.2 && sim.state === 'finished';
@@ -67,7 +67,8 @@ class CamRig {
     this.shake = Math.max(0, this.shake - dt * 2.5);
     const sh = this.shake * 0.12;
     this.cam.position.set(px + Math.sin(time * 61) * sh, this.y + Math.sin(time * 53) * sh, pz + Math.cos(time * 47) * sh);
-    const tFov = 62 + clamp(v / 62, 0, 1.3) * 20 + (sim.boosting || sim.padT > 0 ? 6 : 0);
+    this.fovPunch = Math.max(0, this.fovPunch - dt * 2);
+    const tFov = 62 + clamp(v / 62, 0, 1.3) * 20 + (sim.boosting || sim.padT > 0 ? 6 : 0) + this.fovPunch * 5;
     this.fov = damp(this.fov, tFov, 3.5, dt);
     this.cam.fov = this.fov;
     const tRoll = -sim.steerSm * 0.05 * sens * clamp(v / 30, 0.3, 1.1);
@@ -83,7 +84,7 @@ export class Race {
   canvas: HTMLCanvasElement; cfg: RaceConfig; cb: RaceCallbacks;
   renderer: THREE.WebGLRenderer; scene = new THREE.Scene(); track: Track; world: World; sky: Sky;
   sun: THREE.DirectionalLight; sunDir: THREE.Vector3;
-  racers: Racer[] = []; locals: { r: Racer; rig: CamRig; snow: Snowfall }[] = [];
+  racers: Racer[] = []; locals: { r: Racer; rig: CamRig; snow: Snowfall; wind: number }[] = [];
   sprays: Sprays; q = QUALITY.medium;
   phase: 'countdown' | 'racing' | 'finished' = 'countdown'; clock = 0; raceTime = 0; countT = -3.2; lastCount = 4; goT = 0;
   paused = false; disposed = false; ended = false; raf = 0; last = 0; acc = 0; hudT = 0; time = 0;
@@ -105,6 +106,9 @@ export class Race {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.q.antialias, powerPreference: 'high-performance' });
     this.baseRatio = Math.min(window.devicePixelRatio || 1, this.q.pixelCap) * st.resScale;
     this.renderer.setPixelRatio(this.baseRatio);
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = this.q.shadows; this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.setClearColor(env.fog);
     this.scene.fog = new THREE.FogExp2(env.fog, env.fogDensity);
@@ -116,6 +120,10 @@ export class Race {
     const sc = this.sun.shadow.camera; sc.left = -45; sc.right = 45; sc.top = 45; sc.bottom = -45; sc.near = 1; sc.far = 260;
     this.sun.shadow.bias = -0.0006; this.sun.shadow.normalBias = 0.35;
     this.scene.add(this.sun, this.sun.target);
+    // cool fill/rim light from opposite the sun so shaded slope faces are not black (no shadows)
+    const rim = new THREE.DirectionalLight(0xbfd9ff, 0.55);
+    rim.position.set(-this.sunDir.x * 80, 40, -this.sunDir.z * 80);
+    this.scene.add(rim);
     this.sky = new Sky(env); this.scene.add(this.sky.group);
 
     this.track = new Track({
@@ -147,8 +155,9 @@ export class Race {
         lives: 3, cleanDist: 0, mult: 1, score: 0, lastDist: 0, nextLifeAt: 2000, dead: false, deadClock: 0 });
     });
     for (const r of this.racers) if (r.cfg.human) {
-      const rig = new CamRig(); const snow = new Snowfall(Math.round(900 * this.q.snow * env.snow) + 60, env.id === 'peak' ? 7 : 2);
-      this.scene.add(snow.points); this.locals.push({ r, rig, snow });
+      const rig = new CamRig(); const wind = env.id === 'peak' ? 7 : 2;
+      const snow = new Snowfall(Math.round(900 * this.q.snow * env.snow) + 60, wind);
+      this.scene.add(snow.points); this.locals.push({ r, rig, snow, wind });
     }
     this.locals.sort((a, b) => a.r.cfg.slot - b.r.cfg.slot);
 
@@ -308,7 +317,7 @@ export class Race {
         case 'barrier': if (human) { audio.play('barrier'); this.toast(slot, 'BARRIER HIT', 'bad'); } this.burst(pos, 20, 6, 0.5, [1, 0.6, 0.3]); break;
         case 'coin': if (human) { audio.play('coin'); const c = this.track.coins[e.v]; if (c) this.world.takeCoin(c); this.burst(pos, 4, 3, 0.25, [1, 0.85, 0.2]); } break;
         case 'pad': if (human) { audio.play('pad'); this.toast(slot, 'BOOST PAD!', 'good'); } this.burst(pos, 26, 8, 0.4, [0.4, 0.9, 1]); break;
-        case 'boostOn': if (human) audio.play('boost'); break;
+        case 'boostOn': if (human) audio.play('boost'); this.burst(pos, 26, 7, 0.5, [0.55, 0.9, 1]); if (human) this.locals.forEach((l) => { if (l.r === r) { l.rig.shake = Math.max(l.rig.shake, 0.35); l.rig.fovPunch = 1; } }); break;
         case 'recover': if (human) audio.play('recover'); break;
         case 'finish':
           r.finishClock = 0;
@@ -424,7 +433,7 @@ export class Race {
       r.model.update({ mode, lean: sim.steerSm, speed01: clamp(sim.v / 45, 0, 1.2), crashP: sim.crashT > 0 ? 1 - sim.crashT / sim.crashDur : 1, t: r.poseT, squash: sim.landT > 0 ? sim.landT / 0.45 : 0, spin: sim.spin }, dt);
       // invulnerability blink
       r.model.root.visible = near && !(sim.invuln > 0 && sim.crashT <= 0 && Math.floor(this.time * 14) % 2 === 0 && sim.invuln < 1.8);
-      if (r.trail) { const c = Math.cos(th), s2 = Math.sin(th); r.trail.add(px, sim.y, pz, c, s2, sim.grounded && sim.state !== 'grid'); }
+      if (r.trail) { const c = Math.cos(th), s2 = Math.sin(th); r.trail.setBoost(sim.boosting || sim.padT > 0); r.trail.add(px, sim.y, pz, c, s2, sim.grounded && sim.state !== 'grid'); }
       if (!this.paused && sim.state !== 'grid') this.emitSpray(r, dt, px, pz, th);
     }
     this.sprays.update(this.paused ? 0 : dt, sprayPx);
@@ -494,6 +503,8 @@ export class Race {
       this.sun.target.updateMatrixWorld();
       this.sky.follow(l.rig.cam);
       l.snow.setCamera(l.rig.cam, this.time, h * pr);
+      // snowfall streaks with speed: base wind up to ~2.5x at top speed, +0.5x on boost
+      l.snow.setWind(l.wind * (1 + clamp(sim.v / 45, 0, 1.5) + (sim.boosting || sim.padT > 0 ? 0.5 : 0)));
       void cp;
       r.render(this.scene, l.rig.cam);
     });
