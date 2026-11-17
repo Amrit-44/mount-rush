@@ -41,8 +41,6 @@ function signTexture(kind: string, label?: string): THREE.CanvasTexture {
   g.fillStyle = '#ffd21a'; g.fillRect(0, 0, 256, 256);
   g.strokeStyle = '#111'; g.lineWidth = 14; g.strokeRect(10, 10, 236, 236);
   g.fillStyle = '#111'; g.strokeStyle = '#111'; g.lineCap = 'round'; g.lineJoin = 'round';
-  const arrow = (dir: number) => { g.lineWidth = 26; for (const o of [-70, 10]) { g.beginPath(); g.moveTo(128 - dir * 40 + o * dir * -1 * 0 + o * 0, 50); } };
-  void arrow;
   switch (kind) {
     case 'curveL': case 'curveR': {
       const dir = kind === 'curveR' ? 1 : -1; g.lineWidth = 30;
@@ -361,9 +359,6 @@ export class World {
       const bg = own(new THREE.BufferGeometry());
       bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(bc, 3)); bg.setIndex(bi); bg.computeVertexNormals();
       group.add(new THREE.Mesh(bg, this.matWood));
-      // posts
-      const postM = new THREE.InstancedMesh(this.poleGeo, this.matV, 0);
-      void postM;
     }
     // --- signs ---
     for (const sg of T.signs) {
@@ -515,7 +510,13 @@ export class World {
   private disposeChunk(ch: Chunk) {
     this.scene.remove(ch.group);
     ch.owned.forEach((g) => g.dispose());
-    ch.group.traverse((o) => { if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose(); });
+    ch.group.traverse((o) => {
+      if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose();
+      const m = o as THREE.Mesh;
+      // Geometries created ad-hoc by gate()/crowd() are not in `owned`; free
+      // them here, but never the geometries shared across chunks.
+      if (m.isMesh && m.geometry && !this.sharedGeos.includes(m.geometry) && m.geometry !== this.signPost && m.geometry !== this.planeGeo) m.geometry.dispose();
+    });
   }
 
   dispose() {

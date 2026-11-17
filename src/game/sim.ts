@@ -127,7 +127,7 @@ export class SkierSim {
       if (lat > 0) {
         if (lat > 15 && this.crashT <= 0 && this.invuln <= 0) { this.crash(T, 1, 'barrier'); this.ev('barrier', lat); }
         else if (lat > 7) {
-          if (this.barrierCd <= 0) { this.mistakes += human || true ? 1 : 0; this.barrierCd = 1; this.ev('barrier', lat); }
+          if (this.barrierCd <= 0) { this.mistakes += 1; this.barrierCd = 1; this.ev('barrier', lat); }
           this.v *= 1 - 0.12 * Math.min(1, lat / 12);
           this.phi = -sg * Math.abs(this.phi) * 0.35;
         } else {

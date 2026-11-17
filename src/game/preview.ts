@@ -103,7 +103,7 @@ export class PreviewScene {
   setMode(m: PreviewMode, shift = 0) { this.mode = m; this.platform.visible = m === 'garage'; this.shift = shift; this.applyOffset(); }
   setFocus(f: Focus) { this.focus = f; }
   setRunning(r: boolean) { this.running = r; if (r) this.last = performance.now(); }
-  drag(dx: number) { this.yawOff += dx * 0.012; }
+  drag(dx: number) { if (!Number.isFinite(dx)) return; this.yawOff += dx * 0.012; }
   private onResize = () => this.resize();
   resize() {
     const w = Math.max(2, this.canvas.clientWidth), h = Math.max(2, this.canvas.clientHeight);

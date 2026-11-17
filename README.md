@@ -1,4 +1,4 @@
-# Powder Rush — Downhill Ski Racing
+# Mount Rush — Downhill Ski Racing
 
 A complete 3D browser ski racing game (React + Three.js + Tailwind). All art, models and audio are procedural — no external assets.
 
