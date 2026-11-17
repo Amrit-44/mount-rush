@@ -53,15 +53,16 @@ class AudioEngine {
   }
 
   // ----- continuous skiing sound -----
-  updateSki(speed01: number, grounded: boolean, ice: boolean, boosting: boolean, active: boolean) {
+  updateSki(speed01: number, grounded: boolean, ice: boolean, boosting: boolean, active: boolean, carve = 0) {
     if (!this.ctx || !this.ski || !this.wind) return;
     const t = this.ctx.currentTime;
     const sp = clamp(speed01, 0, 1.4);
+    const cv = clamp(carve, 0, 1);
     const g = active && grounded ? 0.05 + 0.34 * Math.min(1, sp) : 0;
-    this.ski.gain.gain.setTargetAtTime(g * (ice ? 0.6 : 1), t, 0.06);
-    this.ski.filt.frequency.setTargetAtTime((ice ? 2600 : 800) + 2300 * sp, t, 0.08);
-    this.wind.gain.gain.setTargetAtTime(active ? 0.02 + 0.3 * sp * sp + (boosting ? 0.1 : 0) : 0, t, 0.1);
-    this.wind.filt.frequency.setTargetAtTime(300 + 1400 * sp, t, 0.1);
+    this.ski.gain.gain.setTargetAtTime(g * (ice ? 0.6 : 1) * (1 + cv * 0.3), t, 0.06);
+    this.ski.filt.frequency.setTargetAtTime((ice ? 2600 : 800) + 2300 * sp + cv * 300, t, 0.08);
+    this.wind.gain.gain.setTargetAtTime(active ? 0.02 + 0.3 * sp * sp + (boosting ? 0.14 : 0) : 0, t, 0.1);
+    this.wind.filt.frequency.setTargetAtTime(250 + 2150 * sp, t, 0.1);
   }
   silenceLoops() { this.updateSki(0, false, false, false, false); }
 
@@ -99,7 +100,8 @@ class AudioEngine {
       case 'beep': this.tone(520, 520, 0.16, 'square', 0.18); break;
       case 'go': this.tone(1040, 1040, 0.5, 'square', 0.2); this.tone(1560, 1560, 0.5, 'triangle', 0.15); break;
       case 'jump': this.noise(0.22, 600, 2400, 'bandpass', 0.22, 0, 1.5); this.tone(260, 520, 0.14, 'triangle', 0.12); break;
-      case 'land': { const s = clamp(v / 12, 0.2, 1); this.noise(0.18, 900, 160, 'lowpass', 0.35 * s); this.tone(110, 50, 0.18, 'sine', 0.35 * s); break; }
+      case 'boostjump': this.noise(0.3, 500, 4000, 'bandpass', 0.3, 0, 1.5); this.tone(260, 780, 0.2, 'triangle', 0.16); this.noise(0.5, 400, 5000, 'highpass', 0.25, 0.05); break;
+      case 'land': { const s = clamp(v / 12, 0.2, 1); this.noise(0.18, 900, 160, 'lowpass', 0.45 * s); this.tone(110, 50, 0.18, 'sine', 0.45 * s); break; }
       case 'hardland': this.noise(0.3, 1000, 120, 'lowpass', 0.5); this.tone(90, 40, 0.3, 'sine', 0.5); break;
       case 'hit': this.noise(0.18, 1400, 200, 'bandpass', 0.4, 0, 0.8); this.tone(150, 60, 0.2, 'square', 0.22); break;
       case 'bump': this.noise(0.1, 900, 300, 'lowpass', 0.3); this.tone(180, 90, 0.1, 'triangle', 0.2); break;

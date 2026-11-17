@@ -50,17 +50,22 @@ function Speedo({ p, small }: { p: PlayerHud; small?: boolean }) {
       <div className="relative" style={{ width: sz, height: sz }}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-[225deg]">
           <circle cx="50" cy="50" r={R} fill="rgba(6,16,40,.55)" stroke="rgba(160,210,255,.25)" strokeWidth="7" strokeDasharray={`${C * 0.75} ${C}`} strokeLinecap="round" />
-          <circle cx="50" cy="50" r={R} fill="none" stroke={p.boosting ? '#ff9a2a' : '#6fd0ff'} strokeWidth="7" strokeDasharray={`${C * 0.75 * f} ${C}`} strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${p.boosting ? '#ff8a1a' : '#4db8ff'})` }} />
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => {
+            const a = (i * 30 * Math.PI) / 180;
+            return <line key={i} x1={50 + 36 * Math.cos(a)} y1={50 + 36 * Math.sin(a)} x2={50 + 40 * Math.cos(a)} y2={50 + 40 * Math.sin(a)} stroke={i >= 8 ? '#ff6b5e' : 'rgba(160,210,255,0.55)'} strokeWidth="1.4" />;
+          })}
+          {p.speed01 > 1 && <circle cx="50" cy="50" r={R} fill="none" stroke="#ff5a4a" strokeWidth="7" strokeDasharray={`${C * 0.075} ${C * 0.925}`} strokeDashoffset={-C * 0.675} strokeLinecap="round" />}
+          <circle cx="50" cy="50" r={R} fill="none" stroke={p.boosting ? '#ff9a2a' : '#6fd0ff'} strokeWidth="7" strokeDasharray={`${C * 0.75 * f} ${C}`} strokeLinecap="round" className={p.boosting ? 'boost-ring' : ''} style={{ filter: `drop-shadow(0 0 6px ${p.boosting ? '#ff8a1a' : '#4db8ff'})` }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="font-display font-black italic leading-none" style={{ fontSize: small ? 32 : 44 }}>{p.speed}</div>
           <div className="text-[10px] tracking-widest text-sky-200/80 font-bold">KM/H</div>
         </div>
       </div>
-      <div className="-mt-2 w-28 sm:w-36 h-3 rounded-full bg-navy/70 border border-sky-300/30 overflow-hidden">
+      <div className={`-mt-2 w-28 sm:w-36 h-3 rounded-full bg-navy/70 border border-sky-300/30 overflow-hidden ${p.boost >= 100 && !p.boosting ? 'boost-ready' : ''}`}>
         <div className={`h-full ${p.boosting ? 'bg-gradient-to-r from-orange-400 to-yellow-300 shine-bar' : 'bg-gradient-to-r from-sky-400 to-cyan-200'}`} style={{ width: `${clamp(p.boost, 0, 100)}%` }} />
       </div>
-      <div className="text-[10px] font-bold tracking-widest text-sky-200/80">BOOST</div>
+      <div className="text-[10px] font-bold tracking-widest text-sky-200/80">{p.boost >= 100 && !p.boosting ? <span className="text-amber-300">BOOST READY</span> : 'BOOST'}</div>
     </div>
   );
 }
@@ -182,6 +187,16 @@ function Hud({ hud, settings, versus, horizontal, touch }: { hud: HudState; sett
 }
 
 // ---------------- results ----------------
+function CountUp({ n, className = '' }: { n: number; className?: string }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0; const t0 = performance.now();
+    const tick = (t: number) => { const k = Math.min(1, (t - t0) / 800); setV(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [n]);
+  return <span className={className}>{v.toLocaleString()}</span>;
+}
 function Results({ res, sum, setup, next, onContinue, onRetry, onMenu, onNext }: {
   res: RaceResult; sum: Summary | null; setup: RaceSetup; next: boolean; onContinue: () => void; onRetry: () => void; onMenu: () => void; onNext: () => void;
 }) {
@@ -201,7 +216,7 @@ function Results({ res, sum, setup, next, onContinue, onRetry, onMenu, onNext }:
           <div className="text-sky-200 mt-1 text-lg">{sub}</div>
           {ev && sum && (
             <div className="mt-3 flex flex-col items-center gap-1">
-              <Medal m={sum.medal} size={56} />
+              <div className="pop inline-block" style={{ filter: 'drop-shadow(0 0 18px rgba(255,200,60,0.55))' }}><Medal m={sum.medal} size={56} /></div>
               <div className="font-display font-extrabold text-2xl uppercase">{sum.label}{sum.newMedal ? ' · NEW!' : ''}</div>
               <div className="text-xs text-sky-200/80">{ev.name} — Gold: {objectiveTargets(ev.objective)[0]} · Silver: {objectiveTargets(ev.objective)[1]} · Bronze: {objectiveTargets(ev.objective)[2]}</div>
             </div>
@@ -241,8 +256,8 @@ function Results({ res, sum, setup, next, onContinue, onRetry, onMenu, onNext }:
                 {sum.coinsRace > 0 && <div className="flex justify-between"><span>{res.mode === 'endless' ? 'Distance reward' : 'Race reward'}</span><Coin n={sum.coinsRace} className="text-amber-200" /></div>}
                 <div className="flex justify-between"><span>Coins collected</span><Coin n={sum.coinsCollected} className="text-amber-200" /></div>
                 {sum.coinsBonus > 0 && <div className="flex justify-between"><span>Bonuses</span><Coin n={sum.coinsBonus} className="text-amber-200" /></div>}
-                <div className="flex justify-between border-t border-sky-300/20 pt-1 font-bold text-base"><span>Total</span><Coin n={sum.coinsTotal} className="text-amber-300" /></div>
-                <div className="flex justify-between"><span>XP earned</span><b className="text-cyan-200">+{sum.xp} XP</b></div>
+                <div className="flex justify-between border-t border-sky-300/20 pt-1 font-bold text-base"><span>Total</span><span className="inline-flex items-center gap-1.5 font-display font-extrabold tracking-wide text-amber-300"><span className="inline-block w-5 h-5 rounded-full bg-gradient-to-b from-yellow-200 to-amber-500 border-2 border-amber-600 shadow-inner" /><CountUp n={sum.coinsTotal} /></span></div>
+                <div className="flex justify-between"><span>XP earned</span><b className="text-cyan-200">+<CountUp n={sum.xp} /> XP</b></div>
                 <div className="text-xs text-sky-200/70">Level {lv.level} · {lv.into}/{lv.need} XP</div>
                 {sum.pb && <div className="text-emerald-300 font-bold">★ New personal best time!</div>}
                 {sum.bestDistance && <div className="text-emerald-300 font-bold">★ New longest distance!</div>}

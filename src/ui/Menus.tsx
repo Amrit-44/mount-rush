@@ -68,15 +68,16 @@ export function MainMenu({ go, onQuick }: { go: (s: string) => void; onQuick: ()
   const save = useSave();
   const lv = levelFromXp(save.xp);
   return (
-    <div className="h-full flex flex-col screen-in overflow-y-auto">
-      <div className="flex justify-end items-start gap-3 p-3 sm:p-5">
+    <div className="h-full flex flex-col screen-in overflow-y-auto relative">
+      <div className="menu-aurora" />
+      <div className="flex justify-end items-start gap-3 p-3 sm:p-5 relative z-10">
         <div className="glass rounded-xl px-4 py-2 w-56">
           <div className="flex justify-between items-baseline"><span className="font-display font-black text-xl">LVL {lv.level}</span><Coin n={save.coins} className="text-amber-200" /></div>
           <XpBar into={lv.into} need={lv.need} />
           <div className="text-[10px] text-sky-200/70 mt-1 text-right">{lv.into} / {lv.need} XP</div>
         </div>
       </div>
-      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 pb-8 max-w-xl">
+      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 pb-8 max-w-xl relative z-10">
         <div className="mb-6">
           <div className="font-display font-black italic uppercase text-6xl sm:text-8xl leading-[0.85] logo-text">Mount<br />Rush</div>
           <div className="font-display font-extrabold tracking-[0.35em] text-sky-200 text-sm sm:text-base mt-2">DOWNHILL SKI RACING</div>

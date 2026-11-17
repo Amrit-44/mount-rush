@@ -305,12 +305,12 @@ export class Race {
     for (const e of sim.events) {
       const heavy = human;
       switch (e.t) {
-        case 'jump': if (heavy) audio.play('jump'); this.burst(pos, 8, 3, 0.4, [1, 1, 1]); break;
+        case 'jump': if (heavy) audio.play(e.v === 2 ? 'boostjump' : 'jump'); this.burst(pos, e.v === 2 ? 20 : 8, e.v === 2 ? 6 : 3, e.v === 2 ? 0.6 : 0.4, e.v === 2 ? [0.55, 0.9, 1] : [1, 1, 1]); if (e.v === 2 && human) this.locals.forEach((l) => { if (l.r === r) { l.rig.shake = Math.max(l.rig.shake, 0.4); l.rig.fovPunch = 1; } }); break;
         case 'land': if (heavy) audio.play('land', e.v); this.burst(pos, Math.min(30, 6 + e.v * 1.5), 5, 0.5, [1, 1, 1]); if (human) this.locals.forEach((l) => { if (l.r === r) l.rig.shake = Math.max(l.rig.shake, clamp(e.v / 14, 0, 0.7)); }); break;
         case 'hardland': if (heavy) { audio.play('hardland'); this.toast(slot, 'HARD LANDING', 'bad'); } this.burst(pos, 40, 8, 0.6, [1, 1, 1]); this.locals.forEach((l) => { if (l.r === r) l.rig.shake = 1; }); break;
         case 'perfect': if (human) { this.toast(slot, 'PERFECT LANDING +BOOST', 'good'); } break;
         case 'trick': if (human) { audio.play('trick'); this.toast(slot, `TRICK x${e.v}  +BOOST`, 'good'); this.burst(pos, 30, 7, 0.5, [1, 0.9, 0.3]); } break;
-        case 'crash': if (human) { audio.play('crash'); this.toast(slot, 'CRASH!', 'bad'); this.locals.forEach((l) => { if (l.r === r) l.rig.shake = 1; }); if (this.endless) this.endlessCrash(r); } else if (this.nearHuman(r, 60)) audio.play('hit', 0.5); this.burst(pos, 50, 9, 0.7, [1, 1, 1]); break;
+        case 'crash': if (human) { audio.play('crash'); this.toast(slot, 'CRASH!', 'bad'); this.locals.forEach((l) => { if (l.r === r) l.rig.shake = 1.4; }); if (this.endless) this.endlessCrash(r); } else if (this.nearHuman(r, 60)) audio.play('hit', 0.5); this.burst(pos, 50, 9, 0.7, [1, 1, 1]); break;
         case 'hit': if (human) { audio.play('hit'); this.toast(slot, 'OUCH!', 'bad'); this.locals.forEach((l) => { if (l.r === r) l.rig.shake = Math.max(l.rig.shake, 0.6); }); } this.burst(pos, 24, 6, 0.5, [1, 1, 1]); break;
         case 'bump': if (human) audio.play('bump'); this.burst(pos, 10, 4, 0.4, [1, 1, 1]); break;
         case 'bush': if (human) audio.play('bush'); this.burst(pos, 14, 4, 0.5, [0.9, 1, 0.95]); break;
@@ -430,7 +430,7 @@ export class Race {
       else if (fin && sim.v < 5) mode = r.place <= 3 ? 'celebrate' : 'lose';
       else if (!sim.grounded) mode = 'air';
       else if (sim.boosting || sim.padT > 0) mode = 'tuck';
-      r.model.update({ mode, lean: sim.steerSm, speed01: clamp(sim.v / 45, 0, 1.2), crashP: sim.crashT > 0 ? 1 - sim.crashT / sim.crashDur : 1, t: r.poseT, squash: sim.landT > 0 ? sim.landT / 0.45 : 0, spin: sim.spin }, dt);
+      r.model.update({ mode, lean: sim.steerSm, speed01: clamp(sim.v / 45, 0, 1.2), crashP: sim.crashT > 0 ? 1 - sim.crashT / sim.crashDur : 1, t: r.poseT, squash: (sim.landT > 0 ? sim.landT / 0.45 : 0) * (sim.lastJumpBoost ? 1.4 : 1), spin: sim.spin, boosted: !sim.grounded && sim.lastJumpBoost, airTime: sim.airTime }, dt);
       // invulnerability blink
       r.model.root.visible = near && !(sim.invuln > 0 && sim.crashT <= 0 && Math.floor(this.time * 14) % 2 === 0 && sim.invuln < 1.8);
       if (r.trail) { const c = Math.cos(th), s2 = Math.sin(th); r.trail.setBoost(sim.boosting || sim.padT > 0); r.trail.add(px, sim.y, pz, c, s2, sim.grounded && sim.state !== 'grid'); }
@@ -442,7 +442,7 @@ export class Race {
     const p0 = this.locals[0];
     if (p0 && !this.paused) {
       const s = p0.r.sim;
-      audio.updateSki(s.v / 42, s.grounded && s.crashT <= 0, (s.surface & 1) !== 0, s.boosting, s.state !== 'grid' && !this.ended);
+      audio.updateSki(s.v / 42, s.grounded && s.crashT <= 0, (s.surface & 1) !== 0, s.boosting, s.state !== 'grid' && !this.ended, Math.abs(Math.sin(s.phi)));
     }
   }
 

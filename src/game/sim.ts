@@ -17,7 +17,7 @@ export class SkierSim {
   time = 0; finishTime: number | null = null;
   coins = 0; crashes = 0; mistakes = 0; topSpeed = 0; dist = 0; jumps = 0;
   boosting = false; bushT = 0; surface = 0; // bit flags: 1 ice, 2 deep
-  gY = 0; landT = 0; lastPad: unknown = null; lastLanding = 0;
+  gY = 0; landT = 0; lastPad: unknown = null; lastLanding = 0; lastJumpBoost = false;
   events: SimEvent[] = [];
   topMul = 1; gripMul = 1; boostMul = 1;
   crashDur = 1.9;
@@ -149,9 +149,10 @@ export class SkierSim {
     if (jump) this.jumpBuf = 0.14; else this.jumpBuf -= dt;
     this.coyote = this.grounded ? 0.1 : this.coyote - dt;
     if (this.crashT <= 0 && this.jumpBuf > 0 && (this.grounded || this.coyote > 0)) {
-      this.vy = clamp(this.grounded ? gV : this.vy, -9, 14) + 8.2;
+      this.vy = clamp(this.grounded ? gV : this.vy, -9, 14) + 8.2 + (this.boosting ? 4.5 : 0);
       this.grounded = false; this.jumpBuf = 0; this.coyote = 0; this.airTime = 0; this.spin = 0; this.spinV = 0;
-      this.jumps++; this.ev('jump', 1);
+      this.lastJumpBoost = this.boosting;
+      this.jumps++; this.ev('jump', this.boosting ? 2 : 1);
     } else if (this.grounded) {
       if (gV - this.vy < -(G * dt + 0.3) && gNew < this.y - 0.001) { this.grounded = false; this.airTime = 0; this.spin = 0; this.spinV = 0; }
       else { this.y = gNew; this.vy = clamp(gV, -35, 14); }
