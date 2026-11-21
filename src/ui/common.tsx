@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { audio } from '../game/audio';
+import { RARITY_STYLE, Rarity } from '../game/data';
 
 export const sfx = (n: string) => audio.play(n);
 
@@ -33,6 +34,16 @@ export function Coin({ n, className = '' }: { n: number; className?: string }) {
     <span className={`inline-flex items-center gap-1.5 font-display font-extrabold tracking-wide ${className}`}>
       <span className="inline-block w-5 h-5 rounded-full bg-gradient-to-b from-yellow-200 to-amber-500 border-2 border-amber-600 shadow-inner" />
       {Math.floor(n).toLocaleString()}
+    </span>
+  );
+}
+
+export function RarityBadge({ rarity }: { rarity: Rarity }) {
+  const s = RARITY_STYLE[rarity];
+  return (
+    <span className="inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[10px] font-display font-extrabold uppercase tracking-wider"
+      style={{ color: s.color, border: `1px solid ${s.border}`, background: s.glow, boxShadow: `0 0 8px ${s.glow}` }}>
+      {s.label}
     </span>
   );
 }

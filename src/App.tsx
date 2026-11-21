@@ -1,6 +1,6 @@
 import { Component, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { audio } from './game/audio';
-import { EVENTS } from './game/data';
+import { EVENTS, characterById, charVisualsOf } from './game/data';
 import { PreviewScene } from './game/preview';
 import { RaceConfig } from './game/race';
 import { RaceResult, Summary, applyResult, eventUnlocked } from './game/progression';
@@ -41,10 +41,18 @@ export default function App() {
   // preview scene (menu background + garage)
   useEffect(() => {
     let p: PreviewScene | null = null;
-    try { p = new PreviewScene(canvasRef.current!, getSave().equipped); setPreview(p); } catch (e) { console.error('Preview unavailable', e); }
+    try {
+      const { build, char } = charVisualsOf(characterById(getSave().characters?.selected ?? 'rookie'));
+      p = new PreviewScene(canvasRef.current!, getSave().equipped, build, char); setPreview(p);
+    } catch (e) { console.error('Preview unavailable', e); }
     return () => { p?.dispose(); setPreview(null); };
   }, []);
-  useEffect(() => { if (preview && screen !== 'garage') preview.setLook(save.equipped); }, [preview, save.equipped, screen]);
+  useEffect(() => {
+    if (preview && screen !== 'garage') {
+      const { build, char } = charVisualsOf(characterById(save.characters?.selected ?? 'rookie'));
+      preview.setLook(save.equipped, build, char);
+    }
+  }, [preview, save.equipped, save.characters?.selected, screen]);
   useEffect(() => { preview?.setRunning(screen !== 'race'); }, [preview, screen]);
 
   // audio unlock + volumes + menu music

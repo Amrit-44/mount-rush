@@ -1,6 +1,6 @@
 // Race engine: owns renderer, scene, simulation loop, cameras, FX, audio hooks and HUD state.
 import * as THREE from 'three';
-import { CourseDef, ENVS, Look } from './data';
+import { CharacterBuild, CharacterMods, CharacterVisuals, CourseDef, ENVS, Look } from './data';
 import { audio } from './audio';
 import { input } from './input';
 import { PlayerOutcome, RaceResult } from './progression';
@@ -15,6 +15,7 @@ import { clamp, damp, lerp } from './util';
 export interface RacerCfg {
   name: string; look: Look; human: boolean; slot: number; color: string;
   personality?: Personality; skill?: number; top?: number; grip?: number; boost?: number;
+  mods?: CharacterMods; build?: CharacterBuild; char?: CharacterVisuals;
 }
 export interface RaceConfig {
   mode: 'career' | 'quick' | 'endless' | 'versus';
@@ -145,10 +146,16 @@ export class Race {
       if (g < 0) { while (used.has(nextFree)) nextFree++; g = nextFree; }
       used.add(g);
       const sim = new SkierSim();
-      sim.topMul = rc.top ?? 1; sim.gripMul = rc.grip ?? 1; sim.boostMul = rc.boost ?? 1;
+      const m = rc.mods;
+      sim.topMul = (rc.top ?? 1) * (m?.top ?? 1);
+      sim.gripMul = (rc.grip ?? 1) * (m?.grip ?? 1);
+      sim.boostMul = rc.boost ?? 1;
+      sim.steerMul = m?.steer ?? 1; sim.accelMul = m?.accel ?? 1;
+      sim.boostRegenMul = m?.boostRegen ?? 1; sim.boostDrainMul = m?.boostDrain ?? 1;
+      sim.airMul = m?.air ?? 1; sim.crashDur = 1.9 * (m?.crashDur ?? 1);
       const row = Math.floor(g / 3), col = g % 3;
       sim.place(this.endless ? 12 : 10 - row * 4.2, (col - 1) * 3.5 * (this.endless ? 0 : 1), this.track);
-      const model = new SkierModel(rc.look); model.root.rotation.order = 'YXZ'; this.scene.add(model.root);
+      const model = new SkierModel(rc.look, rc.build, rc.char); model.root.rotation.order = 'YXZ'; this.scene.add(model.root);
       const ai = rc.human ? null : new AIDriver(rc.personality!, rc.skill ?? 0.6, 1000 + g * 17 + cfg.course.seed);
       const trail = rc.human && this.q.trails ? new Trail(0x9db6d4) : null; if (trail) this.scene.add(trail.mesh);
       this.racers.push({ cfg: rc, sim, ai, model, trail, place: 1, sprayAcc: 0, pitch: 0, poseT: Math.random() * 10, finishClock: null, lastMistakes: 0, grid: g,

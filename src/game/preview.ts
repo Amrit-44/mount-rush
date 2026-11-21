@@ -1,6 +1,7 @@
 // Menu background + garage showroom (one persistent WebGL scene).
 import * as THREE from 'three';
 import { ENVS, Look } from './data';
+import type { CharacterBuild, CharacterVisuals } from './data';
 import { Sky, Snowfall, Sprays } from './scenery';
 import { SkierModel } from './skierModel';
 import { damp } from './util';
@@ -21,7 +22,7 @@ export class PreviewScene {
   camY = 1; camD = 6; camX = 0; shift = 0; acc = 0; viewW = 1; viewH = 1; fx = 0; fy = 0; dummy = new THREE.Object3D();
   private disposables: { dispose(): void }[] = [];
 
-  constructor(public canvas: HTMLCanvasElement, look: Look) {
+  constructor(public canvas: HTMLCanvasElement, look: Look, build?: CharacterBuild, char?: CharacterVisuals) {
     const env = ENVS.valley;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -74,7 +75,7 @@ export class PreviewScene {
     const rg = new THREE.TorusGeometry(1.52, 0.03, 8, 60); rg.rotateX(Math.PI / 2); const rm = new THREE.MeshBasicMaterial({ color: 0x7cc8ff });
     const ring = new THREE.Mesh(rg, rm); ring.position.y = 0.03; this.platform.add(ring); this.disposables.push(pm, pg, rg, rm);
 
-    this.model = new SkierModel(look); this.model.root.rotation.order = 'YXZ'; this.slope.add(this.model.root);
+    this.model = new SkierModel(look, build, char); this.model.root.rotation.order = 'YXZ'; this.slope.add(this.model.root);
     this.sprays = new Sprays(260); this.scene.add(this.sprays.points);
     this.snow = new Snowfall(500, 3); this.scene.add(this.snow.points);
     window.addEventListener('resize', this.onResize); this.resize();
@@ -99,7 +100,7 @@ export class PreviewScene {
     return m;
   }
 
-  setLook(look: Look) { this.model.setLook(look); }
+  setLook(look: Look, build?: CharacterBuild, char?: CharacterVisuals) { this.model.setLook(look, build, char); }
   setMode(m: PreviewMode, shift = 0) { this.mode = m; this.platform.visible = m === 'garage'; this.shift = shift; this.applyOffset(); }
   setFocus(f: Focus) { this.focus = f; }
   setRunning(r: boolean) { this.running = r; if (r) this.last = performance.now(); }

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { DEFAULT_LOOK, ITEMS, Look, itemById } from './data';
+import { ACCESSORY_SPLIT, DEFAULT_LOOK, ITEMS, Look, OUTFIT_SPLIT, characterById, itemById } from './data';
 
 export type Quality = 'low' | 'medium' | 'high';
 export interface Settings {
@@ -16,6 +16,7 @@ export interface SaveData {
   bestTimes: Record<string, number>;
   owned: string[]; equipped: Look; settings: Settings; stats: Stats;
   endlessBest: { distance: number; score: number };
+  characters: { owned: string[]; selected: string }; charLooks: Record<string, Look>;
 }
 
 // NOTE: keep the original storage key — renaming it would wipe every existing
@@ -38,6 +39,7 @@ export function defaultSave(): SaveData {
     owned: ITEMS.filter((i) => i.unlock.t === 'free').map((i) => i.id),
     equipped: { ...DEFAULT_LOOK }, settings: defaultSettings(), stats: defaultStats(),
     endlessBest: { distance: 0, score: 0 },
+    characters: { owned: ['rookie'], selected: 'rookie' }, charLooks: {},
   };
 }
 
@@ -55,12 +57,45 @@ function validate(raw: any): SaveData {
     if (raw.bestTimes && typeof raw.bestTimes === 'object')
       for (const k of Object.keys(raw.bestTimes)) { const t = num(raw.bestTimes[k], 0); if (t > 5) d.bestTimes[k] = t; }
     if (Array.isArray(raw.owned))
-      for (const id of raw.owned) if (typeof id === 'string' && itemById(id) && !d.owned.includes(id)) d.owned.push(id);
+      for (const id of raw.owned) {
+        if (typeof id !== 'string') continue;
+        if (OUTFIT_SPLIT[id]) {
+          for (const mapped of [OUTFIT_SPLIT[id].jacket, OUTFIT_SPLIT[id].pants]) if (!d.owned.includes(mapped)) d.owned.push(mapped);
+        } else if (ACCESSORY_SPLIT[id]) {
+          for (const mapped of [ACCESSORY_SPLIT[id].back, ACCESSORY_SPLIT[id].special]) if (!d.owned.includes(mapped)) d.owned.push(mapped);
+        } else if (itemById(id) && !d.owned.includes(id)) d.owned.push(id);
+      }
     if (raw.equipped && typeof raw.equipped === 'object') {
+      const eq: Record<string, unknown> = { ...raw.equipped };
+      if (typeof eq.outfit === 'string' && OUTFIT_SPLIT[eq.outfit]) { eq.jacket = OUTFIT_SPLIT[eq.outfit].jacket; eq.pants = OUTFIT_SPLIT[eq.outfit].pants; }
+      if (typeof eq.accessory === 'string' && ACCESSORY_SPLIT[eq.accessory]) { eq.back = ACCESSORY_SPLIT[eq.accessory].back; eq.special = ACCESSORY_SPLIT[eq.accessory].special; }
+      if (eq.helmet === 'hm_beanie') { eq.headwear = 'hm_beanie'; delete eq.helmet; }
       for (const k of Object.keys(d.equipped) as (keyof Look)[]) {
-        const id = raw.equipped[k];
-        const item = typeof id === 'string' ? itemById(id) : undefined;
+        const id = eq[k];
+        if (typeof id !== 'string') continue;
+        const item = itemById(id);
         if (item && item.cat === k && d.owned.includes(id)) d.equipped[k] = id;
+      }
+    }
+    if (raw.characters && typeof raw.characters === 'object') {
+      if (Array.isArray(raw.characters.owned)) {
+        const owned: string[] = ['rookie'];
+        for (const id of raw.characters.owned) if (typeof id === 'string' && characterById(id) && !owned.includes(id)) owned.push(id);
+        d.characters.owned = owned;
+      }
+      if (typeof raw.characters.selected === 'string' && characterById(raw.characters.selected)) d.characters.selected = raw.characters.selected;
+    }
+    if (raw.charLooks && typeof raw.charLooks === 'object') {
+      for (const key of Object.keys(raw.charLooks)) {
+        const char = characterById(key);
+        if (!char || !raw.charLooks[key] || typeof raw.charLooks[key] !== 'object') continue;
+        const overrides: Partial<Look> = {};
+        for (const slot of Object.keys(d.equipped) as (keyof Look)[]) {
+          const id = raw.charLooks[key][slot];
+          const item = typeof id === 'string' ? itemById(id) : undefined;
+          if (item && item.cat === slot && (d.owned.includes(id) || id === char.defaultLook[slot])) overrides[slot] = id;
+        }
+        d.charLooks[key] = overrides as Look;
       }
     }
     if (raw.settings && typeof raw.settings === 'object') {

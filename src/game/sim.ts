@@ -20,6 +20,7 @@ export class SkierSim {
   gY = 0; landT = 0; lastPad: unknown = null; lastLanding = 0; lastJumpBoost = false;
   events: SimEvent[] = [];
   topMul = 1; gripMul = 1; boostMul = 1;
+  steerMul = 1; accelMul = 1; boostRegenMul = 1; boostDrainMul = 1; airMul = 1;
   crashDur = 1.9;
 
   place(s: number, d: number, T: Track) {
@@ -63,7 +64,7 @@ export class SkierSim {
 
     // --- steering ---
     const sRate = Math.abs(steer) > Math.abs(this.steerSm) && steer * this.steerSm >= 0 ? 7.5 : 12;
-    this.steerSm += clamp(steer - this.steerSm, -sRate * dt, sRate * dt);
+    this.steerSm += clamp(steer - this.steerSm, -sRate * this.steerMul * dt, sRate * this.steerMul * dt);
     const v = this.v;
     const maxAng = lerp(0.62, 0.34, clamp((v - 8) / 38, 0, 1)) * (brake ? 1.18 : 1);
     if (this.grounded) {
@@ -73,8 +74,8 @@ export class SkierSim {
       this.spin *= Math.exp(-6 * dt); this.spinV = 0;
     } else {
       this.psi = this.steerSm * 0.32;
-      this.phi += (1.3 * (this.psi - this.phi) - v * kap) * dt;
-      const target = Math.abs(this.steerSm) > 0.6 ? this.steerSm * 7.2 : 0;
+      this.phi += (1.3 * this.airMul * (this.psi - this.phi) - v * kap) * dt;
+      const target = Math.abs(this.steerSm) > 0.6 ? this.steerSm * 7.2 * this.airMul : 0;
       this.spinV += clamp(target - this.spinV, -30 * dt, 30 * dt);
       this.spin += this.spinV * dt;
     }
@@ -84,12 +85,12 @@ export class SkierSim {
     const wantBoost = boost && this.boost > 0.5 && this.crashT <= 0;
     if (wantBoost && !this.boosting) this.ev('boostOn');
     this.boosting = wantBoost;
-    if (this.boosting && this.padT <= 0) this.boost = Math.max(0, this.boost - 26 * dt);
-    else if (!this.boosting && this.grounded) this.boost = Math.min(100, this.boost + 2.5 * dt);
+    if (this.boosting && this.padT <= 0) this.boost = Math.max(0, this.boost - 26 * this.boostDrainMul * dt);
+    else if (!this.boosting && this.grounded) this.boost = Math.min(100, this.boost + 2.5 * this.boostRegenMul * dt);
     this.padT = Math.max(0, this.padT - dt);
 
     // --- longitudinal ---
-    let a = 2.4 + 22 * slope;
+    let a = (2.4 + 22 * slope) * this.accelMul;
     if (this.boosting) a += 11 * this.boostMul;
     if (this.padT > 0) a += 12;
     if (this.startT > 0) a += 4.5;

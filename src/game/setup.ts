@@ -1,4 +1,4 @@
-import { CourseDef, DEFAULT_LOOK, EVENTS, EnvId, ENVS, Look, OPPONENTS, courseById, skiStats } from './data';
+import { CHARACTERS, CourseDef, DEFAULT_LOOK, EVENTS, EnvId, ENVS, Look, OPPONENTS, characterById, characterMods, courseById, skiStats } from './data';
 import { RaceConfig, RacerCfg } from './race';
 import { SaveData } from './save';
 import { clamp } from './util';
@@ -33,7 +33,7 @@ function aiRacers(count: number, diff: number, rot: number): RacerCfg[] {
 
 function humanLook(look: Look, slot: number): Look {
   if (slot === 0) return look;
-  return { ...look, outfit: look.outfit === 'of_red' ? 'of_blue' : 'of_red', skiColor: look.skiColor === 'sc_cyan' ? 'sc_orange' : 'sc_cyan' };
+  return { ...look, skiColor: look.skiColor === 'sc_cyan' ? 'sc_orange' : 'sc_cyan' };
 }
 
 export function opponentsFor(setup: RaceSetup): string[] {
@@ -47,8 +47,11 @@ export function opponentsFor(setup: RaceSetup): string[] {
 export function buildConfig(setup: RaceSetup, save: SaveData): RaceConfig {
   const look = { ...DEFAULT_LOOK, ...save.equipped };
   const st = skiStats(look);
+  const ch = characterById(save.characters?.selected ?? 'rookie') ?? CHARACTERS[0];
+  const mods = characterMods(ch.id);
   const human = (slot: number, name: string, color: string): RacerCfg => ({
     name, look: humanLook(look, slot), human: true, slot, color, top: st.top, grip: st.grip, boost: st.boost,
+    mods, build: ch.build, char: { skin: ch.skin, eyeColor: ch.eyeColor, face: ch.face, hairColor: ch.hairColor },
   });
   switch (setup.mode) {
     case 'career': {

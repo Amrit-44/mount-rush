@@ -87,7 +87,7 @@ export function MainMenu({ go, onQuick }: { go: (s: string) => void; onQuick: ()
           <MenuBtn icon="🏆" sub={`${Object.values(save.medals).filter(Boolean).length}/${EVENTS.length} events completed`} onClick={() => go('career')} delay={60}>Career</MenuBtn>
           <MenuBtn icon="♾️" sub={`Best ${fmtDist(save.endlessBest.distance)}`} onClick={() => go('endless')} delay={120}>Endless</MenuBtn>
           <MenuBtn icon="👥" sub="Local split-screen" onClick={() => go('versus')} delay={180}>Two Players</MenuBtn>
-          <MenuBtn icon="🎿" sub="Skis, outfits & more" onClick={() => go('garage')} delay={240}>Garage</MenuBtn>
+          <MenuBtn icon="🎿" sub="Characters, outfits & more" onClick={() => go('garage')} delay={240}>Store</MenuBtn>
           <div className="grid grid-cols-2 gap-2.5">
             <MenuBtn icon="⚙️" onClick={() => go('settings')} delay={300}>Settings</MenuBtn>
             <MenuBtn icon="📊" onClick={() => go('stats')} delay={360}>Stats</MenuBtn>
